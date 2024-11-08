@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>upload de foto 3x4</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f5;
+        }
+
+        .container {
+            text-align: center;
+            max-width: 600px;
+            margin: 20px;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .upload-section {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        #uploadButton, #downloadButton {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        #uploadButton:hover, #downloadButton:hover {
+            background-color: #45a049;
+        }
+
+        .loading {
+            display: none;
+            font-size: 16px;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .photo-grid {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .photo {
+            width: 75px;
+            height: 100px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            object-fit: cover;
+        }
+
+        #downloadButton {
+            display: none;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>CARREGAR FOTO 3X4</h1>
+        <div class="upload-section">
+            <input type="file" id="fileInput" accept="image/*">
+            <button id="uploadButton">carregar Imagem</button>
+        </div>
+        <div class="loading" id="loading">Carregando...</div>
+        <div class="photo-grid" id="photoGrid"></div>
+        <button id="downloadButton">baixar imagem combinada</button>
+        <canvas id="canvas" style="display: none;"></canvas>
+    </div>
+
+    <script>
+        document.getElementById('uploadButton').addEventListener('click', function () {
+            const fileInput = document.getElementById('fileInput');
+            fileInput.click();
+        });
+
+        document.getElementById('fileInput').addEventListener('change', function (event) {
+            const file = event.target.files[0];
+            const photoGrid = document.getElementById('photoGrid');
+            const loading = document.getElementById('loading');
+            const downloadButton = document.getElementById('downloadButton');
+
+            if (file) {
+                loading.style.display = 'block';
+                photoGrid.innerHTML = '';
+                downloadButton.style.display = 'none';
+
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    loading.style.display = 'none';
+                    const imageSrc = e.target.result;
+
+                    // Criar as seis imagens 3x4 na grade
+                    for (let i = 0; i < 6; i++) {
+                        const img = document.createElement('img');
+                        img.src = imageSrc;
+                        img.classList.add('photo');
+                        photoGrid.appendChild(img);
+                    }
+
+                    // Mostrar o botão de download
+                    downloadButton.style.display = 'block';
+
+                    // Configurar o download da imagem combinada
+                    downloadButton.onclick = function() {
+                        generateCombinedImage(imageSrc);
+                    };
+                };
+
+                reader.onerror = function () {
+                    loading.style.display = 'none';
+                    alert('Erro ao carregar a imagem. Tente novamente.');
+                };
+
+                reader.readAsDataURL(file);
+            }
+        });
+
+        function generateCombinedImage(imageSrc) {
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+
+            // Dimensões da página A4 em pixels a 300 DPI (2480x3508)
+            const pageWidth = 2480;
+            const pageHeight = 3508;
+            const imgWidth = 371;  // Largura de cada imagem 3x4 aumentada
+            const imgHeight = 490; // Altura de cada imagem 3x4 aumentada
+            const spacing = 25;    // Espaço entre as imagens
+
+            // Configurar o tamanho do canvas para A4
+            canvas.width = pageWidth;
+            canvas.height = pageHeight;
+
+            // Cor de fundo branca para o canvas
+            ctx.fillStyle = "#FFFFFF";
+            ctx.fillRect(0, 0, pageWidth, pageHeight);
+
+            const img = new Image();
+            img.src = imageSrc;
+            img.onload = function() {
+                // Posicionamento das seis imagens com espaçamento
+                for (let i = 0; i < 6; i++) {
+                    const x = i * (imgWidth + spacing) + 100;  // Espaçamento da borda esquerda
+                    const y = 300;  // Alinhamento na mesma linha
+                    ctx.drawImage(img, x, y, imgWidth, imgHeight);
+                }
+
+                // Converte o canvas para uma imagem e baixa
+                const combinedImage = canvas.toDataURL("image/png");
+
+                // Obter a data atual no formato "dd-mm-aaaa"
+                const today = new Date();
+                const day = String(today.getDate()).padStart(2, '0');
+                const month = String(today.getMonth() + 1).padStart(2, '0'); // Mês começa em 0
+                const year = today.getFullYear();
+                const fileName = `${day}-${month}-${year}-img-3x4.png`;
+
+                const link = document.createElement('a');
+                link.href = combinedImage;
+                link.download = fileName; // Usar a data como nome do arquivo
+                link.click();
+            };
+        }
+    </script>
+</body>
+</html>
